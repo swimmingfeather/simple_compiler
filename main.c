@@ -1,22 +1,33 @@
-ï»¿#include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "word.h"
 
 /*
-    è¯æ³•åˆ†æž
-    è¾“å…¥ï¼šå­—ç¬¦ä¸²å½¢å¼çš„æºç¨‹åº
-    è¾“å‡ºï¼šè¯¸å¤šç‰¹å®šæ•°æ®ç»“æž„çš„å•è¯ç¬¦å·
+    ´Ê·¨·ÖÎö
+    ÊäÈë£º×Ö·û´®ÐÎÊ½µÄÔ´³ÌÐò
+    Êä³ö£ºÖî¶àÌØ¶¨Êý¾Ý½á¹¹µÄµ¥´Ê·ûºÅ
 */
-//struct word{
-
-//};
-
+struct word * words = NULL;
+void chain_add_node(struct word* words,int type, char* value, int nline, int nchar){
+	struct word* tmp = words;
+	while(tmp->next != NULL)
+		tmp = tmp->next;
+	tmp->next = (struct word*)malloc(sizeof(struct word));
+	(tmp->next)->next = NULL;
+	(tmp->next)->type = type;
+	(tmp->next)->value = (char *)malloc(sizeof(*value));
+	strcpy((tmp->next)->value, value);
+	(tmp->next)->line = nline;
+	(tmp->next)->colume = nchar;
+}
+extern void lex(FILE* f);
 int main(int argc, char** args)
 {
 	FILE* f = fopen(args[1], "r");
 	unsigned int tmp = 0;
 	if( NULL == f){
-		printf("æ–‡ä»¶ä¸å­˜åœ¨\nThe file is not existed.");
+		printf("ÎÄ¼þ²»´æÔÚ\nThe file is not existed.");
 		return -1;
 	}
 
@@ -26,15 +37,15 @@ int main(int argc, char** args)
 	char input_buf[tmp*sizeof(char) + 1];
 
 	fseek(f, 0, SEEK_SET);
-	//ä¸ºäº†å…¼å®¹Unix/Linuxå’ŒWindows
+	//ÎªÁË¼æÈÝUnix/LinuxºÍWindows
 	tmp = fread(&input_buf, 1, tmp, f);
 	fclose(f);
 	input_buf[tmp] = '\0';
 	//for test
 	//printf("%s", &input_buf);
 
-    //é¢„å¤„ç†
-    //åªè¿›è¡Œåˆ é™¤æ³¨é‡ŠåŠåŽ»é™¤éžæ¢è¡Œçš„æ ¼å¼æŽ§åˆ¶å­—ç¬¦
+    //Ô¤´¦Àí
+    //Ö»½øÐÐÉ¾³ý×¢ÊÍ¼°È¥³ý·Ç»»ÐÐµÄ¸ñÊ½¿ØÖÆ×Ö·û
 
 	char scan_buf[tmp*sizeof(char) + 1];
 	tmp = 0;
@@ -66,22 +77,60 @@ int main(int argc, char** args)
         }
 	}
 here:
+    //tmp·Å½øforÑ­»·³õÊ¼»¯ºóÓëÍâ²¿µÄtmpÊµ¼ÊÉÏ²¢²»ÊÇÍ¬Ò»¸ö±äÁ¿£¬·ÀÖ¹Á½Õß»ìÏý·ÅÔÚforÑ­»·Íâ³õÊ¼»¯
+    tmp = 0;
 	for(
-		int i = 0, tmp = 0;
+		int j = 0;
 		1; tmp++){
 
 		while(input_buf[tmp]== '\n' || input_buf[tmp]>=' '){
 
-			scan_buf[i++] = input_buf[tmp++];
+			scan_buf[j++] = input_buf[tmp++];
 		}
 		if(input_buf[tmp] == '\0'){
-			scan_buf[i] = '\0';
+			scan_buf[j] = '\0';
+			tmp = 0;
+			tmp = (unsigned int)j;//´æ´¢scan_bufµÄÊµ¼ÊÓÐÓÃ´óÐ¡
 			break;
 		}
 	}
 	//for test
-	printf("%s", &scan_buf);
+	//printf("%s", &scan_buf);
 
+    //µ÷ÓÃlex½øÐÐ´Ê·¨·ÖÎö
+	char* type_for_print[6] = {" ", "¹Ø¼ü×Ö", "²Ù×÷·û", "·Ö¸ô·û", "ID", "³£Á¿"};
+	f=tmpfile();
+	fwrite(&scan_buf, 1, tmp, f);
+	//ÔÚ´Ë´¦ÖØÖÃÎÄ¼þÁ÷Î»ÖÃ£¬·ñÔòlex½«»áÔÚÎÄ¼þÁ÷Ä©Î²¿ªÊ¼Æ¥Åä
+	fseek(f, 0, SEEK_SET);
+
+    words = (struct word*)malloc(sizeof(struct word));
+    words->next = NULL;
+    words->value = NULL;
+	lex(f);
+	fclose(f);
+
+
+	tmp = (unsigned int)(words->next);
+	printf("ÀàÐÍ\tÖµ\tÐÐºÅ\tÁÐºÅ\n");
+	while((struct word*)tmp != NULL){
+		printf("%s\t%s\t%d\t%d\n",type_for_print[((struct word*)tmp)->type], ((struct word*)tmp)->value, ((struct word*)tmp)->line, ((struct word*)tmp)->colume );
+		tmp = (unsigned int)(((struct word*)tmp)->next);
+	}
+
+
+
+	//ÊÍ·ÅÁ´±í¿Õ¼ä
+	struct word* i = words->next;
+	tmp = (unsigned int)words;
+    while(i != NULL){
+        if(((struct word*)tmp)->value)
+            free(((struct word*)tmp)->value);
+        free((struct word*)tmp);
+        tmp = (unsigned int)i;
+        i = i->next;
+    }
+    free((struct word*)tmp);
 
 
     return 0;
