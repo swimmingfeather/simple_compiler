@@ -26,7 +26,7 @@ int main(int argc, char** args)
 	char input_buf[tmp*sizeof(char) + 1];
 
 	fseek(f, 0, SEEK_SET);
-	//为了兼容Unix/Linux和Windows
+	//为了兼容Unix/Linux和Windows对\n\r的处理
 	tmp = fread(&input_buf, 1, tmp, f);
 	fclose(f);
 	input_buf[tmp] = '\0';
@@ -40,6 +40,7 @@ int main(int argc, char** args)
 	tmp = 0;
 
 	while(1){
+        //直到遇到第一个'/'后检测下一字符是否为'/'或'*'
         while(input_buf[tmp++] != '/'){
             if(tmp > sizeof(input_buf))
                 goto here;
@@ -71,7 +72,7 @@ here:
 	for(
 		int j = 0;
 		1; tmp++){
-
+        //scan_buf中只保留可见字符及换行，换行符便于后续统计行号
 		while(input_buf[tmp]== '\n' || input_buf[tmp]>=' '){
 
 			scan_buf[j++] = input_buf[tmp++];
@@ -88,18 +89,21 @@ here:
 
     //调用lex进行词法分析
 	char* type_for_print[6] = {" ", "关键字", "操作符", "分隔符", "ID", "常量"};
-	f=tmpfile();
+	f=tmpfile();//c语言中创建临时文件的标准库函数
 	fwrite(&scan_buf, 1, tmp, f);
 	//在此处重置文件流位置，否则lex将会在文件流末尾开始匹配
 	fseek(f, 0, SEEK_SET);
 
+    //链表增加表头节点
     words = (struct word*)malloc(sizeof(struct word));
     words->next = NULL;
     words->value = NULL;
+
+    //调用Lex进行词法分析
 	lex(f);
 	fclose(f);
 
-
+    //输出词法分析结果
 	tmp = (unsigned int)(words->next);
 	f = fopen("output.txt", "w");
 	//printf("类型\t值\t行号\t列号\n");
