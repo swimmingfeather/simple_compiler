@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "word.h"
 
 /*
@@ -9,19 +8,9 @@
     输出：诸多特定数据结构的单词符号
 */
 struct word * words = NULL;
-void chain_add_node(struct word* words,int type, char* value, int nline, int nchar){
-	struct word* tmp = words;
-	while(tmp->next != NULL)
-		tmp = tmp->next;
-	tmp->next = (struct word*)malloc(sizeof(struct word));
-	(tmp->next)->next = NULL;
-	(tmp->next)->type = type;
-	(tmp->next)->value = (char *)malloc(sizeof(*value));
-	strcpy((tmp->next)->value, value);
-	(tmp->next)->line = nline;
-	(tmp->next)->colume = nchar;
-}
 extern void lex(FILE* f);
+
+
 int main(int argc, char** args)
 {
 	FILE* f = fopen(args[1], "r");
@@ -41,7 +30,7 @@ int main(int argc, char** args)
 	tmp = fread(&input_buf, 1, tmp, f);
 	fclose(f);
 	input_buf[tmp] = '\0';
-	//for test
+	//=====for test=====
 	//printf("%s", &input_buf);
 
     //预处理
@@ -94,7 +83,7 @@ here:
 			break;
 		}
 	}
-	//for test
+	//=====for test=====
 	//printf("%s", &scan_buf);
 
     //调用lex进行词法分析
@@ -112,25 +101,20 @@ here:
 
 
 	tmp = (unsigned int)(words->next);
-	printf("类型\t值\t行号\t列号\n");
+	f = fopen("output.txt", "w");
+	//printf("类型\t值\t行号\t列号\n");
+	fprintf(f, "类型\t值\t行号\t列号\n");
 	while((struct word*)tmp != NULL){
-		printf("%s\t%s\t%d\t%d\n",type_for_print[((struct word*)tmp)->type], ((struct word*)tmp)->value, ((struct word*)tmp)->line, ((struct word*)tmp)->colume );
+		//printf("%s\t%s\t%d\t%d\n",type_for_print[((struct word*)tmp)->type], ((struct word*)tmp)->value, ((struct word*)tmp)->line, ((struct word*)tmp)->colume );
+        fprintf(f, "%s\t%s\t%d\t%d\n",type_for_print[((struct word*)tmp)->type], ((struct word*)tmp)->value, ((struct word*)tmp)->line, ((struct word*)tmp)->colume );
+
 		tmp = (unsigned int)(((struct word*)tmp)->next);
 	}
-
+    fclose(f);
 
 
 	//释放链表空间
-	struct word* i = words->next;
-	tmp = (unsigned int)words;
-    while(i != NULL){
-        if(((struct word*)tmp)->value)
-            free(((struct word*)tmp)->value);
-        free((struct word*)tmp);
-        tmp = (unsigned int)i;
-        i = i->next;
-    }
-    free((struct word*)tmp);
+	free_node(words);
 
 
     return 0;

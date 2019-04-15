@@ -4,15 +4,14 @@
 #include "word.h"
 int nchar, nword, nline = 1;
 extern struct word* words;
-extern void chain_add_node(struct word* words,int type, char* value, int nline, int nchar);
 
 %}
 
 keywords auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|int|long|register|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while
 
-operantor \+|\-|\*|\/|\<|\<=|\>|\>=|=|==|!=|\(|\)|\^|'|#|&|&&|\||\|\||%|~|<<|>>|\[|\]|\{|\}|\.|!
+operantor \+|\-|\*|\/|\<|\<=|\>|\>=|=|==|!=|\(|\)|\^|'|#|&|&&|\||\|\||%|~|<<|>>|\[|\]|\{|\}|\.|!|\\
 
-separator ,|\\|;|:
+separator ,|;|:
 
 id [_a-zA-Z][_a-zA-Z0-9]*
 
@@ -20,8 +19,7 @@ constant ([0-9])+|(".*")
 %%
 \n {
 	nline++;
-	nchar++;
-	//nchar = 0;
+	nchar = 0;
 }
 [ \t]+ { nword++, nchar += yyleng; }
 {keywords} {chain_add_node(words, 1, yytext, nline, nchar);nword++, nchar += yyleng;}

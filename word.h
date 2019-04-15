@@ -7,4 +7,6 @@ struct word{
 	int colume;
 	struct word* next;
 };
+extern void chain_add_node(struct word* words,int type, char* value, int nline, int nchar);
+extern void free_node(struct word* words);
 #endif
