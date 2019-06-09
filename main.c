@@ -1,26 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "word.h"
-
-/*
-    词法分析
-    输入：字符串形式的源程序
-    输出：诸多特定数据结构的单词符号
-*/
-struct word * words = NULL;
-extern void lex(FILE* f);
+#include "syntax_tree.h"
 
 
-int main(int argc, char** args)
-{
-	FILE* f = fopen(args[1], "r");
-	unsigned int tmp = 0;
-	if( NULL == f){
-		printf("文件不存在\nThe file is not existed.");
-		return -1;
-	}
+struct syntax_tree * syn_tree_root = NULL;
+extern void yyparse();
 
-	fseek(f, 0, SEEK_END);
+void preprocess(FILE* f){
+    unsigned int tmp = 0;
+
+
+    fseek(f, 0, SEEK_END);
 	tmp = ftell(f);
 
 	char input_buf[tmp*sizeof(char) + 1];
@@ -67,12 +57,11 @@ int main(int argc, char** args)
         }
 	}
 here:
-    //tmp放进for循环初始化后与外部的tmp实际上并不是同一个变量，防止两者混淆放在for循环外初始化
     tmp = 0;
 	for(
 		int j = 0;
 		1; tmp++){
-        //scan_buf中只保留可见字符及换行，换行符便于后续统计行号
+        //scan_buf中只保留可见字符及换行
 		while(input_buf[tmp]== '\n' || input_buf[tmp]>=' '){
 
 			scan_buf[j++] = input_buf[tmp++];
@@ -87,38 +76,35 @@ here:
 	//=====for test=====
 	//printf("%s", &scan_buf);
 
-    //调用lex进行词法分析
-	char* type_for_print[6] = {" ", "关键字", "操作符", "分隔符", "ID", "常量"};
 	f=tmpfile();//c语言中创建临时文件的标准库函数
 	fwrite(&scan_buf, 1, tmp, f);
 	//在此处重置文件流位置，否则lex将会在文件流末尾开始匹配
 	fseek(f, 0, SEEK_SET);
-
-    //链表增加表头节点
-    words = (struct word*)malloc(sizeof(struct word));
-    words->next = NULL;
-    words->value = NULL;
-
-    //调用Lex进行词法分析
-	lex(f);
-	fclose(f);
-
-    //输出词法分析结果
-	tmp = (unsigned int)(words->next);
-	f = fopen("output.txt", "w");
-	//printf("类型\t值\t行号\t列号\n");
-	fprintf(f, "类型\t值\t行号\t列号\n");
-	while((struct word*)tmp != NULL){
-		//printf("%s\t%s\t%d\t%d\n",type_for_print[((struct word*)tmp)->type], ((struct word*)tmp)->value, ((struct word*)tmp)->line, ((struct word*)tmp)->colume );
-        fprintf(f, "%s\t%s\t%d\t%d\n",type_for_print[((struct word*)tmp)->type], ((struct word*)tmp)->value, ((struct word*)tmp)->line, ((struct word*)tmp)->colume );
-
-		tmp = (unsigned int)(((struct word*)tmp)->next);
+}
+int main(int argc, char** args)
+{
+	FILE* f = fopen(args[1], "r");
+	if( NULL == f){
+		printf("文件不存在\nThe file is not existed.");
+		return -1;
 	}
+    preprocess(f);//文件预处理
+
+    //调用YACC进行语法分析
+
+    //yyin为YACC和LEX共有的文件流，用以存放需进行语法分析的源代码文件
+	extern FILE *yyin;
+	yyin = f;
+	//以下函数在syntax_tree.tab.c中
+	yyparse();
+
     fclose(f);
 
+    //输出语法树至syntax_tree_out.txt并释放链表空间
+    PrintSyntaxTree(syn_tree_root, 0, fopen("syntax_tree_out.txt", "w+"));
+    //PrintSyntaxTree(syn_tree_root, 0, stdout);
 
-	//释放链表空间
-	free_node(words);
+	//free_node(syn_tree_root);
 
 
     return 0;
